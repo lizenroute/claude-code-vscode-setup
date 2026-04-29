@@ -1,8 +1,8 @@
 # notify-cute-sound
 
-Claude Code 完成回應、等你輸入時，自動播放提示音並彈出桌面通知。
+Claude Code 完成任務、或需要你操作時，自動播放提示音並彈出桌面通知（離開 VS Code 視窗也會彈）。
 
-Plays a cute sound and shows a desktop notification whenever Claude Code finishes a response and is waiting for your input.
+Plays a cute sound and shows a desktop notification when Claude Code finishes a task or needs your input — works even when VS Code is not in focus.
 
 ---
 
@@ -52,10 +52,10 @@ notify-cute-sound/
 
 ## 移除 / Uninstall
 
-1. 開啟 Claude Code，輸入 `/hooks`，找到 Stop hook 並刪除
+1. 開啟 Claude Code，輸入 `/hooks`，找到 Stop 和 Notification hook 並刪除
 2. 刪除 `~/.claude/sounds/` 資料夾（選擇性）
 
-1. Open Claude Code, run `/hooks`, delete the Stop hook entry
+1. Open Claude Code, run `/hooks`, delete the Stop and Notification hook entries
 2. Delete `~/.claude/sounds/` folder (optional)
 
 ---

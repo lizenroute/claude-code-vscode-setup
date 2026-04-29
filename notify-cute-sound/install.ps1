@@ -7,6 +7,15 @@ Write-Host ""
 Write-Host "=== Claude Code Notify - Windows Installer ===" -ForegroundColor Cyan
 Write-Host ""
 
+# --- 步驟 0：登記 ClaudeCode 通知 App ID（不需管理員權限）---
+$regPath = "HKCU:\SOFTWARE\Classes\AppUserModelId\ClaudeCode"
+if (-not (Test-Path $regPath)) {
+    New-Item -Path $regPath -Force | Out-Null
+}
+Set-ItemProperty -Path $regPath -Name "DisplayName" -Value "Claude Code" -Type String
+Write-Host "Registered ClaudeCode notification app ID" -ForegroundColor Green
+Write-Host ""
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # --- 步驟 1：選擇音效存放路徑 ---
@@ -71,34 +80,56 @@ $settings = if (Test-Path $settingsPath) {
     [PSCustomObject]@{}
 }
 
-$hookCommand = "powershell -NoProfile -STA -WindowStyle Hidden -File `"$ps1Dest`""
+$stopCommand   = "powershell -NoProfile -STA -WindowStyle Hidden -File `"$ps1Dest`""
+$notifyCommand = "powershell -NoProfile -STA -WindowStyle Hidden -File `"$ps1Dest`" -Message `"Claude needs your input!`""
 
-# 確保 hooks.Stop 存在
+# 確保 hooks 物件存在
 if (-not $settings.PSObject.Properties["hooks"]) {
     $settings | Add-Member -NotePropertyName "hooks" -NotePropertyValue ([PSCustomObject]@{})
 }
+
+# --- Stop hook ---
 if (-not $settings.hooks.PSObject.Properties["Stop"]) {
     $settings.hooks | Add-Member -NotePropertyName "Stop" -NotePropertyValue @()
 }
-
-# 避免重複加入
-$alreadyAdded = @($settings.hooks.Stop) | Where-Object {
+$stopAlreadyAdded = @($settings.hooks.Stop) | Where-Object {
     $_.hooks -and ($_.hooks | Where-Object { $_.command -like "*play-notification.ps1*" })
 }
-
-if (-not $alreadyAdded) {
-    $newEntry = [PSCustomObject]@{
+if (-not $stopAlreadyAdded) {
+    $stopEntry = [PSCustomObject]@{
         hooks = @(
             [PSCustomObject]@{
                 type    = "command"
-                command = $hookCommand
+                command = $stopCommand
                 shell   = "powershell"
                 async   = $true
             }
         )
     }
     $settings.hooks | Add-Member -NotePropertyName "Stop" `
-        -NotePropertyValue (@($settings.hooks.Stop) + $newEntry) -Force
+        -NotePropertyValue (@($settings.hooks.Stop) + $stopEntry) -Force
+}
+
+# --- Notification hook（AskUserQuestion 等待使用者時觸發）---
+if (-not $settings.hooks.PSObject.Properties["Notification"]) {
+    $settings.hooks | Add-Member -NotePropertyName "Notification" -NotePropertyValue @()
+}
+$notifyAlreadyAdded = @($settings.hooks.Notification) | Where-Object {
+    $_.hooks -and ($_.hooks | Where-Object { $_.command -like "*play-notification.ps1*" })
+}
+if (-not $notifyAlreadyAdded) {
+    $notifyEntry = [PSCustomObject]@{
+        hooks = @(
+            [PSCustomObject]@{
+                type    = "command"
+                command = $notifyCommand
+                shell   = "powershell"
+                async   = $true
+            }
+        )
+    }
+    $settings.hooks | Add-Member -NotePropertyName "Notification" `
+        -NotePropertyValue (@($settings.hooks.Notification) + $notifyEntry) -Force
 }
 
 $settings | ConvertTo-Json -Depth 20 | Set-Content $settingsPath -Encoding UTF8
@@ -106,6 +137,8 @@ Write-Host "Updated: $settingsPath" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "Installation complete!" -ForegroundColor Cyan
-Write-Host "Claude Code will play a sound and show a notification when it finishes a response."
+Write-Host "Claude Code will play a sound + show a notification when:"
+Write-Host "  - It finishes a task (Stop)"
+Write-Host "  - It needs your input (Notification / AskUserQuestion)"
 Write-Host "To disable: open Claude Code and run /hooks"
 Write-Host ""
