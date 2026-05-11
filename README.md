@@ -31,10 +31,12 @@ This repo sets up notification sounds that trigger at exactly those moments, so 
 | 資料夾 | 功能 |
 |--------|------|
 | [notify-cute-sound](./notify-cute-sound/) | Claude 完成或需要操作時，播放提示音 + 桌面通知 |
+| [statusline](./statusline/) | 雙列 statusline：顯示 rate limit、context 用量、時區、model 資訊 |
 
 | Folder | Feature |
 |--------|---------|
 | [notify-cute-sound](./notify-cute-sound/) | Play a sound + desktop notification when Claude finishes or needs your input |
+| [statusline](./statusline/) | Two-line statusline: rate limits, context usage, timezone, model info |
 
 ---
 
